@@ -62,4 +62,5 @@ jobs:
       - name: Print Output
         id: output
         run:
-          echo "${{ steps.test-action.outputs.previous-version }} -> ${{steps.test-action.outputs.current-version }}"
+          echo "${{ steps.test-action.outputs.previous-version }} ->
+          ${{steps.test-action.outputs.current-version }}"
