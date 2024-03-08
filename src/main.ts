@@ -28,18 +28,7 @@ export async function run(): Promise<void> {
 
     info(`Current version: ${currentVersion}`)
     setOutput('current-version', currentVersion)
-    console.log(
-      'currentVersion',
-      currentVersion,
-      'previousVersion',
-      previousVersion,
-      'create-tag',
-      getInput('create-tag'),
-      `INPUT_${'create-tag'.replace(/ /g, '_').toUpperCase()}`,
-      process.env['INPUT_CREATE-TAG'],
-      'test',
-      process.env[`INPUT_${'create-tag'.replace(/ /g, '_').toUpperCase()}`]
-    )
+
     if (
       currentVersion !== previousVersion &&
       getInput('create-tag') !== 'false'

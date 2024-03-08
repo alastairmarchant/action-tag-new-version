@@ -25126,7 +25126,6 @@ async function run() {
         const currentVersion = await (0, determine_version_1.determineVersion)();
         (0, core_1.info)(`Current version: ${currentVersion}`);
         (0, core_1.setOutput)('current-version', currentVersion);
-        console.log('currentVersion', currentVersion, 'previousVersion', previousVersion, 'create-tag', (0, core_1.getInput)('create-tag'), `INPUT_${'create-tag'.replace(/ /g, '_').toUpperCase()}`, process.env['INPUT_CREATE-TAG'], 'test', process.env[`INPUT_${'create-tag'.replace(/ /g, '_').toUpperCase()}`]);
         if (currentVersion !== previousVersion &&
             (0, core_1.getInput)('create-tag') !== 'false') {
             const tagTemplate = (0, core_1.getInput)('tag-template') || 'v{VERSION}';
