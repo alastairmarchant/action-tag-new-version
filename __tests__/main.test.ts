@@ -1,89 +1,128 @@
-/**
- * Unit tests for the action's main functionality, src/main.ts
- *
- * These should be run as if the action was called from a workflow.
- * Specifically, the inputs listed in `action.yml` should be set as environment
- * variables following the pattern `INPUT_<INPUT_NAME>`.
- */
+import fs from 'fs'
+import { setOutput, info } from '@actions/core'
+import { runTestsInScratchDirectory } from './helpers/scratch-directory'
+import { initRepository, addAndTrackRemote } from './helpers/git'
+import { run } from '../src/main'
 
-import * as core from '@actions/core'
-import * as main from '../src/main'
+runTestsInScratchDirectory()
 
-// Mock the action's main function
-const runMock = jest.spyOn(main, 'run')
+const originalOutput = process.env.GITHUB_OUTPUT
+const originalRef = process.env.GITHUB_REF
 
-// Other utilities
-const timeRegex = /^\d{2}:\d{2}:\d{2}/
+jest.mock('@actions/core', () => ({
+  ...jest.requireActual('@actions/core'),
+  // getInput: jest.fn(),
+  setOutput: jest.fn(),
+  info: jest.fn(),
+  setFailed: jest.fn()
+}))
 
-// Mock the GitHub Actions core library
-let debugMock: jest.SpiedFunction<typeof core.debug>
-let errorMock: jest.SpiedFunction<typeof core.error>
-let getInputMock: jest.SpiedFunction<typeof core.getInput>
-let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
-let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+beforeEach(async () => {
+  await initRepository(process.cwd())
 
-describe('action', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
+  fs.writeFileSync('package.json', JSON.stringify({ version: '1.2.3' }))
 
-    debugMock = jest.spyOn(core, 'debug').mockImplementation()
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
-    getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+  const { execa } = await import('execa')
+
+  await execa('git', ['add', 'package.json'])
+  await execa('git', ['commit', '-m', 'Add package.json'])
+
+  delete process.env.GITHUB_OUTPUT
+  process.env.GITHUB_REF = 'main'
+})
+
+afterEach(() => {
+  process.env.GITHUB_OUTPUT = originalOutput
+  process.env.GITHUB_REF = originalRef
+  delete process.env['INPUT_CREATE-TAG']
+
+  jest.restoreAllMocks()
+})
+
+describe('with a changed version', () => {
+  beforeEach(async () => {
+    await initRepository('upstream')
+    await addAndTrackRemote('origin', 'upstream/.git')
+
+    fs.writeFileSync('package.json', JSON.stringify({ version: '2.0.0' }))
+
+    const { execa } = await import('execa')
+    await execa('git', ['commit', '-am', 'Bump version'])
   })
 
-  it('sets the time output', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return '500'
-        default:
-          return ''
-      }
-    })
+  test('creates a new tag', async () => {
+    await run()
 
-    await main.run()
-    expect(runMock).toHaveReturned()
+    // Ensure tags exist here and upstream
+    const { execa } = await import('execa')
+    await execa('git', ['rev-parse', 'v2.0.0'])
+    await execa('git', ['rev-parse', 'v2.0.0'], { cwd: 'upstream' })
 
-    // Verify that all of the core library functions were called correctly
-    expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    expect(debugMock).toHaveBeenNthCalledWith(
-      2,
-      expect.stringMatching(timeRegex)
-    )
-    expect(debugMock).toHaveBeenNthCalledWith(
-      3,
-      expect.stringMatching(timeRegex)
-    )
-    expect(setOutputMock).toHaveBeenNthCalledWith(
-      1,
-      'time',
-      expect.stringMatching(timeRegex)
-    )
-    expect(errorMock).not.toHaveBeenCalled()
+    expect(setOutput).toHaveBeenCalledTimes(3)
+    expect(info).toHaveBeenCalledWith('Previous version: 1.2.3')
+    expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
+    expect(info).toHaveBeenCalledWith('Current version: 2.0.0')
+    expect(setOutput).toHaveBeenCalledWith('current-version', '2.0.0')
+    expect(info).toHaveBeenCalledWith('Creating tag v2.0.0')
+    expect(setOutput).toHaveBeenCalledWith('tag', 'v2.0.0')
+    // expect(result.stdout).toMatchInlineSnapshot(`
+    //   "Previous version: 1.2.3
+
+    //   ::set-output name=previous-version::1.2.3
+    //   Current version: 2.0.0
+
+    //   ::set-output name=current-version::2.0.0
+    //   Creating tag v2.0.0
+
+    //   ::set-output name=tag::v2.0.0"
+    // `)
   })
 
-  it('sets a failed status', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return 'this is not a number'
-        default:
-          return ''
-      }
-    })
+  test('skips tag creation when configured to', async () => {
+    process.env['INPUT_CREATE-TAG'] = 'false'
+    await run()
 
-    await main.run()
-    expect(runMock).toHaveReturned()
+    expect(setOutput).toHaveBeenCalledTimes(2)
+    expect(info).toHaveBeenCalledWith('Previous version: 1.2.3')
+    expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
+    expect(info).toHaveBeenCalledWith('Current version: 2.0.0')
+    expect(setOutput).toHaveBeenCalledWith('current-version', '2.0.0')
 
-    // Verify that all of the core library functions were called correctly
-    expect(setFailedMock).toHaveBeenNthCalledWith(
-      1,
-      'milliseconds not a number'
+    // expect(result.stdout).toMatchInlineSnapshot(`
+    //   "Previous version: 1.2.3
+
+    //   ::set-output name=previous-version::1.2.3
+    //   Current version: 2.0.0
+
+    //   ::set-output name=current-version::2.0.0"
+    // `)
+  })
+})
+
+describe('with no version change', () => {
+  test('emits the same previous and current version', async () => {
+    fs.writeFileSync(
+      'package.json',
+      JSON.stringify({ version: '1.2.3', name: 'changed' })
     )
-    expect(errorMock).not.toHaveBeenCalled()
+    const { execa } = await import('execa')
+    await execa('git', ['commit', '-am', 'Change name'])
+
+    await run()
+
+    expect(setOutput).toHaveBeenCalledTimes(2)
+    expect(info).toHaveBeenCalledWith('Previous version: 1.2.3')
+    expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
+    expect(info).toHaveBeenCalledWith('Current version: 1.2.3')
+    expect(setOutput).toHaveBeenCalledWith('current-version', '1.2.3')
+
+    // expect(result.stdout).toMatchInlineSnapshot(`
+    //   "Previous version: 1.2.3
+
+    //   ::set-output name=previous-version::1.2.3
+    //   Current version: 1.2.3
+
+    //   ::set-output name=current-version::1.2.3"
+    // `)
   })
 })

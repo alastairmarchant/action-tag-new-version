@@ -1,26 +1,73 @@
-import * as core from '@actions/core'
-import { wait } from './wait'
+import { getInput, setOutput, info, setFailed } from '@actions/core'
+import { determineVersion } from './determine-version'
+import { validateHistoryDepth, checkout, createTag, refExists } from './git'
+import { getEnv, getEnvOrNull } from './utils'
 
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
+
+const VERSION_PLACEHOLDER = /{VERSION}/g
+
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    await validateHistoryDepth()
+    await checkout('HEAD~1')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    const previousVersion = await determineVersion()
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    info(`Previous version: ${previousVersion}`)
+    setOutput('previous-version', previousVersion)
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
-  } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    const checkoutRef = getEnvOrNull('GITHUB_HEAD_REF') || getEnv('GITHUB_REF')
+
+    await checkout(checkoutRef)
+
+    const currentVersion = await determineVersion()
+
+    info(`Current version: ${currentVersion}`)
+    setOutput('current-version', currentVersion)
+    console.log(
+      'currentVersion',
+      currentVersion,
+      'previousVersion',
+      previousVersion,
+      'create-tag',
+      getInput('create-tag'),
+      `INPUT_${'create-tag'.replace(/ /g, '_').toUpperCase()}`,
+      process.env['INPUT_CREATE-TAG'],
+      'test',
+      process.env[`INPUT_${'create-tag'.replace(/ /g, '_').toUpperCase()}`]
+    )
+    if (
+      currentVersion !== previousVersion &&
+      getInput('create-tag') !== 'false'
+    ) {
+      const tagTemplate = getInput('tag-template') || 'v{VERSION}'
+      const tag = tagTemplate.replace(VERSION_PLACEHOLDER, currentVersion)
+
+      const annotationTemplate =
+        getInput('tag-annotation-template') || 'Released version {VERSION}'
+      const annotation = annotationTemplate.replace(
+        VERSION_PLACEHOLDER,
+        currentVersion
+      )
+
+      if (await refExists(tag)) {
+        info(`Tag ${tag} already exists`)
+      } else {
+        info(`Creating tag ${tag}`)
+        setOutput('tag', tag)
+
+        await createTag(tag, annotation)
+      }
+    }
+  } catch (error: unknown) {
+    let errorMessage = 'Unknown error occurred'
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
+    setFailed(errorMessage)
   }
 }
