@@ -62,6 +62,7 @@ describe('with a changed version', () => {
   })
 
   test('creates a new tag', async () => {
+    console.error("CREATE-TAG", process.env['INPUT_CREATE-TAG'])
     await run()
 
     // Ensure tags exist here and upstream
