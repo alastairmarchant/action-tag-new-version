@@ -30,6 +30,7 @@ beforeEach(async () => {
   await execa('git', ['commit', '-m', 'Add package.json'])
 
   delete process.env.GITHUB_OUTPUT
+  process.env.GITHUB_HEAD_REF = 'main'
   process.env.GITHUB_REF = 'main'
   process.env['INPUT_CREATE-TAG'] = 'true'
 })
