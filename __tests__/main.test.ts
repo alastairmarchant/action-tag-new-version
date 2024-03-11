@@ -64,7 +64,7 @@ describe('with a changed version', () => {
   test('creates a new tag', async () => {
     console.error('CREATE-TAG', process.env['INPUT_CREATE-TAG'])
     await run()
-
+    expect(setFailed).not.toHaveBeenCalled()
     // Ensure tags exist here and upstream
     const { execa } = await import('execa')
     await execa('git', ['rev-parse', 'v2.0.0'])
