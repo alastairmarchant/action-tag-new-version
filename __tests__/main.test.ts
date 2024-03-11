@@ -31,6 +31,7 @@ beforeEach(async () => {
 
   delete process.env.GITHUB_OUTPUT
   process.env.GITHUB_REF = 'main'
+  process.env['INPUT_CREATE-TAG'] = 'true'
 })
 
 afterEach(() => {
