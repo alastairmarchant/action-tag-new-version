@@ -63,7 +63,24 @@ describe('with a changed version', () => {
   })
 
   test('creates a new tag', async () => {
-    console.error('CREATE-TAG', process.env['INPUT_CREATE-TAG'])
+    await run()
+    expect(setFailed).not.toHaveBeenCalled()
+    // Ensure tags exist here and upstream
+    const { execa } = await import('execa')
+    await execa('git', ['rev-parse', 'v2.0.0'])
+    await execa('git', ['rev-parse', 'v2.0.0'], { cwd: 'upstream' })
+
+    expect(setOutput).toHaveBeenCalledTimes(3)
+    expect(info).toHaveBeenCalledWith('Previous version: 1.2.3')
+    expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
+    expect(info).toHaveBeenCalledWith('Current version: 2.0.0')
+    expect(setOutput).toHaveBeenCalledWith('current-version', '2.0.0')
+    expect(info).toHaveBeenCalledWith('Creating tag v2.0.0')
+    expect(setOutput).toHaveBeenCalledWith('tag', 'v2.0.0')
+  })
+
+  test('creates a new tag with GITHUB_HEAD_REF unset', async () => {
+    delete process.env.GITHUB_HEAD_REF
     await run()
     expect(setFailed).not.toHaveBeenCalled()
     // Ensure tags exist here and upstream
