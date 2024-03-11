@@ -78,7 +78,7 @@ describe('with a changed version', () => {
   })
 
   test('Notifies when tag exists', async () => {
-    createTag("v2.0.0")
+    createTag('v2.0.0')
 
     await run()
 
@@ -134,6 +134,8 @@ describe('fails with no GITHUB_REF', () => {
     delete process.env.GITHUB_REF
     await run()
 
-    expect(setFailed).toHaveBeenCalledWith('Missing environment variable GITHUB_REF')
+    expect(setFailed).toHaveBeenCalledWith(
+      'Missing environment variable GITHUB_REF'
+    )
   })
 })

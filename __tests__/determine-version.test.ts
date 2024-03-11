@@ -37,7 +37,10 @@ test('Throws error when no command specified', async () => {
     await determineVersion()
   } catch (error) {
     if (error instanceof Error) {
-      expect(error.message).toMatch('No `version-command` specified, and unable to guess from repo contents.')
+      // eslint-disable-next-line jest/no-conditional-expect
+      expect(error.message).toMatch(
+        'No `version-command` specified, and unable to guess from repo contents.'
+      )
     }
   }
 })
