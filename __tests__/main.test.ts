@@ -135,6 +135,7 @@ describe('fails with no GITHUB_REF', () => {
     await execa('git', ['commit', '-am', 'Change name'])
 
     delete process.env.GITHUB_REF
+    delete process.env.GITHUB_HEAD_REF
     await run()
 
     expect(setFailed).toHaveBeenCalledWith(
