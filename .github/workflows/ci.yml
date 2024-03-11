@@ -58,6 +58,8 @@ jobs:
       - name: Test Local Action
         id: test-action
         uses: ./
+        with:
+          create-tag: 'false'
 
       - name: Print Output
         id: output
