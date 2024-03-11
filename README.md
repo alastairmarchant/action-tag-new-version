@@ -14,9 +14,9 @@ This action allows you to detect a new version of your repository based on some
 change in its contents between commits, creating a git tag if a new version is
 detected.
 
-For example, in a JavaScript repository, you could detect that the `version` field in
-`package.json` had changed from `"1.0.0"` to `"1.1.0"` and therefore create a
-`v1.1.0` tag from the current commit.
+For example, in a JavaScript repository, you could detect that the `version`
+field in `package.json` had changed from `"1.0.0"` to `"1.1.0"` and therefore
+create a `v1.1.0` tag from the current commit.
 
 ## Usage
 
