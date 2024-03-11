@@ -1,21 +1,24 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
-  "author": "",
+  "name": "tag-new-version",
+  "description": "GitHub Action to detect and tag a new project version.",
+  "version": "1.0.0",
+  "author": "Aalstair Marchant <alastairmarchant.am@gmail.com>",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/alastairmarchant/action-tag-new-version",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/alastairmarchant/action-tag-new-version.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/alastairmarchant/action-tag-new-version/issues"
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "github",
+    "tag",
+    "version",
+    "release",
+    "semantic"
   ],
   "exports": {
     ".": "./dist/index.js"
