@@ -1,13 +1,14 @@
 import fs from 'fs'
-import { setOutput, info } from '@actions/core'
+import { setOutput, info, setFailed } from '@actions/core'
 import { runTestsInScratchDirectory } from './helpers/scratch-directory'
-import { initRepository, addAndTrackRemote } from './helpers/git'
+import { initRepository, addAndTrackRemote, createTag } from './helpers/git'
 import { run } from '../src/main'
 
 runTestsInScratchDirectory()
 
 const originalOutput = process.env.GITHUB_OUTPUT
 const originalRef = process.env.GITHUB_REF
+const originalHeadRef = process.env.GITHUB_HEAD_REF
 
 jest.mock('@actions/core', () => ({
   ...jest.requireActual('@actions/core'),
@@ -18,6 +19,7 @@ jest.mock('@actions/core', () => ({
 }))
 
 beforeEach(async () => {
+  jest.resetModules()
   await initRepository(process.cwd())
 
   fs.writeFileSync('package.json', JSON.stringify({ version: '1.2.3' }))
@@ -32,10 +34,18 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
+  delete process.env.GITHUB_OUTPUT
+  delete process.env.GITHUB_REF
+  delete process.env.GITHUB_HEAD_REF
+
+  jest.resetAllMocks()
+})
+
+afterAll(() => {
   process.env.GITHUB_OUTPUT = originalOutput
   process.env.GITHUB_REF = originalRef
+  process.env.GITHUB_HEAD_REF = originalHeadRef
   delete process.env['INPUT_CREATE-TAG']
-
   jest.restoreAllMocks()
 })
 
@@ -65,17 +75,20 @@ describe('with a changed version', () => {
     expect(setOutput).toHaveBeenCalledWith('current-version', '2.0.0')
     expect(info).toHaveBeenCalledWith('Creating tag v2.0.0')
     expect(setOutput).toHaveBeenCalledWith('tag', 'v2.0.0')
-    // expect(result.stdout).toMatchInlineSnapshot(`
-    //   "Previous version: 1.2.3
+  })
 
-    //   ::set-output name=previous-version::1.2.3
-    //   Current version: 2.0.0
+  test('Notifies when tag exists', async () => {
+    createTag("v2.0.0")
 
-    //   ::set-output name=current-version::2.0.0
-    //   Creating tag v2.0.0
+    await run()
 
-    //   ::set-output name=tag::v2.0.0"
-    // `)
+    expect(setOutput).toHaveBeenCalledTimes(2)
+    expect(info).toHaveBeenCalledTimes(3)
+    expect(info).toHaveBeenCalledWith('Previous version: 1.2.3')
+    expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
+    expect(info).toHaveBeenCalledWith('Current version: 2.0.0')
+    expect(setOutput).toHaveBeenCalledWith('current-version', '2.0.0')
+    expect(info).toHaveBeenCalledWith('Tag v2.0.0 already exists')
   })
 
   test('skips tag creation when configured to', async () => {
@@ -87,15 +100,6 @@ describe('with a changed version', () => {
     expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
     expect(info).toHaveBeenCalledWith('Current version: 2.0.0')
     expect(setOutput).toHaveBeenCalledWith('current-version', '2.0.0')
-
-    // expect(result.stdout).toMatchInlineSnapshot(`
-    //   "Previous version: 1.2.3
-
-    //   ::set-output name=previous-version::1.2.3
-    //   Current version: 2.0.0
-
-    //   ::set-output name=current-version::2.0.0"
-    // `)
   })
 })
 
@@ -115,14 +119,21 @@ describe('with no version change', () => {
     expect(setOutput).toHaveBeenCalledWith('previous-version', '1.2.3')
     expect(info).toHaveBeenCalledWith('Current version: 1.2.3')
     expect(setOutput).toHaveBeenCalledWith('current-version', '1.2.3')
+  })
+})
 
-    // expect(result.stdout).toMatchInlineSnapshot(`
-    //   "Previous version: 1.2.3
+describe('fails with no GITHUB_REF', () => {
+  test('raises error', async () => {
+    fs.writeFileSync(
+      'package.json',
+      JSON.stringify({ version: '1.2.3', name: 'changed' })
+    )
+    const { execa } = await import('execa')
+    await execa('git', ['commit', '-am', 'Change name'])
 
-    //   ::set-output name=previous-version::1.2.3
-    //   Current version: 1.2.3
+    delete process.env.GITHUB_REF
+    await run()
 
-    //   ::set-output name=current-version::1.2.3"
-    // `)
+    expect(setFailed).toHaveBeenCalledWith('Missing environment variable GITHUB_REF')
   })
 })

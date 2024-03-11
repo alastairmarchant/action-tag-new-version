@@ -27,4 +27,17 @@ test('uses a custom command when specified', async () => {
   process.env['INPUT_VERSION-COMMAND'] = 'echo 3.4.5'
 
   expect(await determineVersion()).toBe('3.4.5')
+
+  delete process.env['INPUT_VERSION-COMMAND']
+})
+
+test('Throws error when no command specified', async () => {
+  expect.assertions(1)
+  try {
+    await determineVersion()
+  } catch (error) {
+    if (error instanceof Error) {
+      expect(error.message).toMatch('No `version-command` specified, and unable to guess from repo contents.')
+    }
+  }
 })

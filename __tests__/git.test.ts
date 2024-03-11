@@ -5,6 +5,8 @@ import { initRepository, addAndTrackRemote } from './helpers/git'
 runTestsInScratchDirectory()
 
 beforeEach(async () => {
+  process.env.GIT_CONFIG_GLOBAL = ''
+  process.env.GIT_CONFIG_SYSTEM = ''
   await initRepository(process.cwd())
 })
 
@@ -42,6 +44,22 @@ describe('refExists', () => {
     expect(await git.refExists('HEAD~3')).toBe(false)
     expect(await git.refExists('nonexistent-branch')).toBe(false)
     expect(await git.refExists('a-tag')).toBe(false)
+  })
+})
+
+describe('ensureUserIsConfigured', () => {
+  test('configures user.name and user.email', async () => {
+    const { execa } = await import('execa')
+    await execa('git', ['config', '--unset', 'user.name'])
+    await execa('git', ['config', '--unset', 'user.email'])
+
+    await git.ensureUserIsConfigured()
+
+    const name = await execa('git', ['config', 'user.name'])
+    const email = await execa('git', ['config', 'user.email'])
+
+    expect(name.stdout.trim()).toBe('github-actions')
+    expect(email.stdout.trim()).toBe('github-actions@user.noreply.github.com')
   })
 })
 

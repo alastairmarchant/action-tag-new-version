@@ -22,3 +22,9 @@ export async function addAndTrackRemote(
   await execa('git', ['fetch', '--all'])
   await execa('git', ['branch', '--set-upstream-to', `${name}/main`])
 }
+
+export async function createTag(name: string): Promise<void> {
+  const { execa } = await import('execa')
+  await execa('git', ['tag', name])
+  await execa('git', ['push', '--tags'])
+}
