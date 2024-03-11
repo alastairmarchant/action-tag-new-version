@@ -1,5 +1,8 @@
 name: Update Major Version Tag
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
