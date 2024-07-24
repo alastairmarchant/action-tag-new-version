@@ -24,6 +24,7 @@ jobs:
   check-dist:
     name: Check dist/
     runs-on: ubuntu-latest
+    if: ${{ github.triggering_actor != 'dependabot[bot]' }}
 
     steps:
       - name: Checkout
