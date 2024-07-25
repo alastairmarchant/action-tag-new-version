@@ -11,7 +11,7 @@ An updated version of
 which appears to be unmaintained.
 
 This action allows you to detect a new version of your repository based on some
-change in its contents between commits, creating a git tag if a new version is
+change in its contents between commits, creating a Git tag if a new version is
 detected.
 
 For example, in a JavaScript repository, you could detect that the `version`
@@ -23,7 +23,7 @@ create a `v1.1.0` tag from the current commit.
 The configuration below would create a new version tag in your repository any
 time the contents of a `current-version.txt` file changed.
 
-**Note**: since this action examines your git history to detect changes, you
+**Note**: since this action examines your Git history to detect changes, you
 must set a `fetch-depth` of at least `2` with `actions/checkout` for that
 history to be present.
 
