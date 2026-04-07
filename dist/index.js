@@ -28801,7 +28801,7 @@ function determineVersionCommand() {
         return tokenizeArgs(command);
     }
     if (existsSync('package.json')) {
-        return ['jq', '-r', '.version', 'package.json'];
+        return ['yq', '-r', '.version', 'package.json'];
     }
     else {
         const gemspecs = Ui('*.gemspec');
