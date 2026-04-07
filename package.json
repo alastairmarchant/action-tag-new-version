@@ -1,7 +1,7 @@
 {
   "name": "tag-new-version",
   "description": "GitHub Action to detect and tag a new project version.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "Aalstair Marchant <alastairmarchant.am@gmail.com>",
   "type": "module",
   "private": true,
