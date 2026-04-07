@@ -10,6 +10,7 @@ allowed:
   - isc
   - mit
   - cc0-1.0
+  - blueoak-1.0.0
   - other
 
 ignored:
