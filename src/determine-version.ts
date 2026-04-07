@@ -17,7 +17,7 @@ function determineVersionCommand(): string[] {
   }
 
   if (existsSync('package.json')) {
-    return ['jq', '-r', '.version', 'package.json']
+    return ['yq', '-r', '.version', 'package.json']
   } else {
     const gemspecs = glob('*.gemspec')
     if (gemspecs.length === 1) {
