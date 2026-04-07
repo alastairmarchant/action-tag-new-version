@@ -1,6 +1,7 @@
-import * as git from '../src/git'
-import { runTestsInScratchDirectory } from './helpers/scratch-directory'
-import { initRepository, addAndTrackRemote } from './helpers/git'
+import * as git from '../src/git.js'
+import { runTestsInScratchDirectory } from '../__fixtures__/scratch-directory.js'
+import { initRepository, addAndTrackRemote } from '../__fixtures__/git.js'
+import { x } from 'tinyexec'
 
 runTestsInScratchDirectory()
 
@@ -25,16 +26,14 @@ describe('validateHistoryDepth', () => {
 
   test('resolves with multiple commits', async () => {
     expect.assertions(0)
-    const { execa } = await import('execa')
-    await execa('git', ['commit', '--allow-empty', '-m', 'an empty commit'])
+    await x('git', ['commit', '--allow-empty', '-m', 'an empty commit'])
     await git.validateHistoryDepth()
   })
 })
 
 describe('refExists', () => {
   test('returns true for existing refs', async () => {
-    const { execa } = await import('execa')
-    await execa('git', ['tag', 'a-tag'])
+    await x('git', ['tag', 'a-tag'])
     expect(await git.refExists('HEAD')).toBe(true)
     expect(await git.refExists('main')).toBe(true)
     expect(await git.refExists('a-tag')).toBe(true)
@@ -49,14 +48,13 @@ describe('refExists', () => {
 
 describe('ensureUserIsConfigured', () => {
   test('configures user.name and user.email', async () => {
-    const { execa } = await import('execa')
-    await execa('git', ['config', '--unset', 'user.name'])
-    await execa('git', ['config', '--unset', 'user.email'])
+    await x('git', ['config', '--unset', 'user.name'])
+    await x('git', ['config', '--unset', 'user.email'])
 
     await git.ensureUserIsConfigured()
 
-    const name = await execa('git', ['config', 'user.name'])
-    const email = await execa('git', ['config', 'user.email'])
+    const name = await x('git', ['config', 'user.name'])
+    const email = await x('git', ['config', 'user.email'])
 
     expect(name.stdout.trim()).toBe('github-actions')
     expect(email.stdout.trim()).toBe('github-actions@user.noreply.github.com')
@@ -69,15 +67,30 @@ describe('createTag', () => {
     await addAndTrackRemote('foo', 'upstream/.git')
 
     await git.createTag('foo-bar', 'Here is my commit annotation.')
-    const { execa } = await import('execa')
-    const localTag = await execa('git', ['tag', '-n1'])
+    const localTag = await x('git', ['tag', '-n1'])
     expect(localTag.stdout.trim()).toMatch(
       /^foo-bar\s+Here is my commit annotation.$/
     )
 
-    const remoteTag = await execa('git', ['tag', '-n1'], { cwd: 'upstream' })
+    const remoteTag = await x('git', ['tag', '-n1'], {
+      nodeOptions: { cwd: 'upstream' }
+    })
     expect(remoteTag.stdout.trim()).toMatch(
       /^foo-bar\s+Here is my commit annotation.$/
     )
+  })
+
+  test('creates and pushes the given tag without annotation', async () => {
+    await initRepository('upstream')
+    await addAndTrackRemote('foo', 'upstream/.git')
+
+    await git.createTag('foo-bar', '')
+    const localTag = await x('git', ['tag', '-n1'])
+    expect(localTag.stdout.trim()).toMatch(/^foo-bar\s+initial commit$/)
+
+    const remoteTag = await x('git', ['tag', '-n1'], {
+      nodeOptions: { cwd: 'upstream' }
+    })
+    expect(remoteTag.stdout.trim()).toMatch(/^foo-bar\s+initial commit$/)
   })
 })

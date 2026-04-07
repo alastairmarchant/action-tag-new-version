@@ -1,7 +1,7 @@
 import fs from 'fs'
-import { runTestsInScratchDirectory } from './helpers/scratch-directory'
+import { runTestsInScratchDirectory } from '../__fixtures__/scratch-directory.js'
 
-import { determineVersion } from '../src/determine-version'
+import { determineVersion } from '../src/determine-version.js'
 
 runTestsInScratchDirectory()
 

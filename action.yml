@@ -11,7 +11,7 @@ inputs:
   create-tag:
     description: >
       Whether or not a tag should be created if a new version is detected.
-    default: true
+    default: 'true'
   tag-template:
     description: >
       A template for producing a tag name from the current version of your
@@ -31,8 +31,8 @@ outputs:
   tag:
     description: if a new tag is created, this output will contain its name
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: node24
+  main: dist/index.js
 branding:
   icon: tag
   color: purple

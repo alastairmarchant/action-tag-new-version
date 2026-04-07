@@ -1,10 +1,10 @@
 # Detect and Tag New Version
 
-[![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
-![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
-[![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml)
-[![CodeQL](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
-[![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
+![Linter](https://github.com/alastairmarchant/action-tag-new-version/actions/workflows/linter.yml/badge.svg)
+![CI](https://github.com/alastairmarchant/action-tag-new-version/actions/workflows/ci.yml/badge.svg)
+![Check dist/](https://github.com/alastairmarchant/action-tag-new-version/actions/workflows/check-dist.yml/badge.svg)
+![CodeQL](https://github.com/alastairmarchant/action-tag-new-version/actions/workflows/codeql-analysis.yml/badge.svg)
+![Coverage](./badges/coverage.svg)
 
 An updated version of
 [salsify/action-detect-and-tag-new-version](https://github.com/salsify/action-detect-and-tag-new-version),

@@ -1,26 +1,31 @@
 import { existsSync } from 'fs'
 import { sync as glob } from 'glob'
 import { getInput } from '@actions/core'
+import { x } from 'tinyexec'
+import { tokenizeArgs } from 'args-tokenizer'
 
 export async function determineVersion(): Promise<string> {
-  const command = determineVersionCommand()
-  const { execaCommand } = await import('execa')
-  const result = await execaCommand(command, { shell: true })
+  const [command, ...args] = determineVersionCommand()
+  const result = await x(command, args, { nodeOptions: { shell: true } })
   return result.stdout.trim()
 }
 
-function determineVersionCommand(): string {
+function determineVersionCommand(): string[] {
   const command = getInput('version-command')
   if (command) {
-    return command
+    return tokenizeArgs(command)
   }
 
   if (existsSync('package.json')) {
-    return `node -p 'require("./package.json").version'`
+    return ['jq', '-r', '.version', 'package.json']
   } else {
     const gemspecs = glob('*.gemspec')
     if (gemspecs.length === 1) {
-      return `ruby -e "puts Gem::Specification.load('${gemspecs[0]}').version"`
+      return [
+        'ruby',
+        '-e',
+        `puts\\ Gem::Specification.load\\(\\'${gemspecs[0]}\\'\\).version`
+      ]
     }
   }
 

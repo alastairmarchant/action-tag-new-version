@@ -1,15 +1,15 @@
-import { getInput, setOutput, info, setFailed } from '@actions/core'
-import { determineVersion } from './determine-version'
-import { validateHistoryDepth, checkout, createTag, refExists } from './git'
-import { getEnv, getEnvOrNull } from './utils'
-
-/**
- * The main function for the action.
- * @returns {Promise<void>} Resolves when the action is complete.
- */
+import * as core from '@actions/core'
+import { determineVersion } from './determine-version.js'
+import { validateHistoryDepth, checkout, createTag, refExists } from './git.js'
+import { getEnv, getEnvOrNull } from './utils.js'
 
 const VERSION_PLACEHOLDER = /{VERSION}/g
 
+/**
+ * The main function for the action.
+ *
+ * @returns Resolves when the action is complete.
+ */
 export async function run(): Promise<void> {
   try {
     await validateHistoryDepth()
@@ -17,8 +17,8 @@ export async function run(): Promise<void> {
 
     const previousVersion = await determineVersion()
 
-    info(`Previous version: ${previousVersion}`)
-    setOutput('previous-version', previousVersion)
+    core.info(`Previous version: ${previousVersion}`)
+    core.setOutput('previous-version', previousVersion)
 
     const checkoutRef = getEnvOrNull('GITHUB_HEAD_REF') || getEnv('GITHUB_REF')
 
@@ -26,37 +26,38 @@ export async function run(): Promise<void> {
 
     const currentVersion = await determineVersion()
 
-    info(`Current version: ${currentVersion}`)
-    setOutput('current-version', currentVersion)
+    core.info(`Current version: ${currentVersion}`)
+    core.setOutput('current-version', currentVersion)
 
     if (
       currentVersion !== previousVersion &&
-      getInput('create-tag') !== 'false'
+      core.getInput('create-tag') !== 'false'
     ) {
-      const tagTemplate = getInput('tag-template') || 'v{VERSION}'
+      const tagTemplate = core.getInput('tag-template') || 'v{VERSION}'
       const tag = tagTemplate.replace(VERSION_PLACEHOLDER, currentVersion)
 
       const annotationTemplate =
-        getInput('tag-annotation-template') || 'Released version {VERSION}'
+        core.getInput('tag-annotation-template') || 'Released version {VERSION}'
       const annotation = annotationTemplate.replace(
         VERSION_PLACEHOLDER,
         currentVersion
       )
 
       if (await refExists(tag)) {
-        info(`Tag ${tag} already exists`)
+        core.info(`Tag ${tag} already exists`)
       } else {
-        info(`Creating tag ${tag}`)
-        setOutput('tag', tag)
+        core.info(`Creating tag ${tag}`)
+        core.setOutput('tag', tag)
 
         await createTag(tag, annotation)
       }
     }
   } catch (error: unknown) {
     let errorMessage = 'Unknown error occurred'
+    /* istanbul ignore if */
     if (error instanceof Error) {
       errorMessage = error.message
     }
-    setFailed(errorMessage)
+    core.setFailed(errorMessage)
   }
 }
