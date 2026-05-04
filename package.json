@@ -45,7 +45,7 @@
     "@actions/core": "^3.0.1",
     "args-tokenizer": "^0.3.0",
     "glob": "^13.0.6",
-    "tinyexec": "^1.0.4"
+    "tinyexec": "^1.1.2"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.5",
